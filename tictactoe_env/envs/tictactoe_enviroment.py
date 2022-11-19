@@ -55,6 +55,11 @@ class TicTacToe(gym.core.Env):
                     self.debug.write("\nTris = "+str(tris)+" player "+str(player) +
                                      " pos "+str(pos)+" reward total:"+str(reward)+"\n")
                     done = True
+                block, player, pos = self.block()
+                if block and player == self.actual_player:
+                    reward += block
+                    self.debug.write(
+                        f'\nBlock = {block} player {player} pos {pos} reward total:{reward}')
                 self.change_player()
             else:
                 self.increment_invalid_move()
@@ -69,6 +74,7 @@ class TicTacToe(gym.core.Env):
         self.debug.write("\nNext Player: "+str(self.actual_player)+"\n")
         self.debug.write(
             "\n--------------------------------------------------------\n")
+        self.debug.flush()
         return np.array(self.state), reward, done, {}
 
     def reset(self):
@@ -223,6 +229,96 @@ class TicTacToe(gym.core.Env):
             pass
 
         return tris, player, pos
+
+    def block(self):
+        block = 0
+        player = 0
+        pos = None
+        block_count = 0
+        pos_str = ""
+
+        block, player, pos = self.block_for_rows()
+        pos_str += pos
+        block_count += block
+        block, player, pos = self.block_for_cols()
+        pos_str += pos
+        block_count += block
+        block, player, pos = self.block_for_diags()
+        pos_str += pos
+        block_count += block
+        return block_count, player, pos_str
+
+    def block_for_rows(self):
+        block = 0
+        player = 0
+        pos = ''
+        actual_player = self.actual_player
+        if self.state[0] == actual_player and self.state[1] == actual_player and self.state[2] != actual_player and self.state[2] != 0\
+                or self.state[0] == actual_player and self.state[1] != actual_player and self.state[1] != 0 and self.state[2] == actual_player\
+                or self.state[0] != actual_player and self.state[0] != 0 and self.state[1] == actual_player and self.state[2] == actual_player:
+            block += 1
+            player = actual_player
+            pos += "first row "
+        if self.state[3] == actual_player and self.state[4] == actual_player and self.state[5] != actual_player and self.state[5] != 0\
+                or self.state[3] == actual_player and self.state[4] != actual_player and self.state[4] != 0 and self.state[5] == actual_player\
+                or self.state[3] != actual_player and self.state[3] != 0 and self.state[4] == actual_player and self.state[5] == actual_player:
+            block += 1
+            player = actual_player
+            pos += "second row "
+        if self.state[6] == actual_player and self.state[7] == actual_player and self.state[8] != actual_player and self.state[8] != 0\
+                or self.state[6] == actual_player and self.state[7] != actual_player and self.state[7] != 0 and self.state[8] == actual_player\
+                or self.state[6] != actual_player and self.state[6] != 0 and self.state[7] == actual_player and self.state[8] == actual_player:
+            block += 1
+            player = actual_player
+            pos += "third row "
+
+        return block, player, pos
+
+    def block_for_cols(self):
+        block = 0
+        player = 0
+        pos = ''
+        actual_player = self.actual_player
+        if self.state[0] == actual_player and self.state[3] == actual_player and self.state[6] != actual_player and self.state[6] != 0\
+                or self.state[0] == actual_player and self.state[3] != actual_player and self.state[3] != 0 and self.state[6] == actual_player\
+                or self.state[0] != actual_player and self.state[0] != 0 and self.state[3] == actual_player and self.state[6] == actual_player:
+            block += 1
+            player = actual_player
+            pos += 'first col '
+        if self.state[1] == actual_player and self.state[4] == actual_player and self.state[7] != actual_player and self.state[7] != 0\
+                or self.state[1] == actual_player and self.state[4] != actual_player and self.state[4] != 0 and self.state[7] == actual_player\
+                or self.state[1] != actual_player and self.state[1] != 0 and self.state[4] == actual_player and self.state[7] == actual_player:
+            block += 1
+            player = actual_player
+            pos += 'second col '
+        if self.state[2] == actual_player and self.state[5] == actual_player and self.state[8] != actual_player and self.state[8] != 0\
+                or self.state[2] == actual_player and self.state[5] != actual_player and self.state[5] != 0 and self.state[8] == actual_player\
+                or self.state[2] != actual_player and self.state[2] != 0 and self.state[5] == actual_player and self.state[8] == actual_player:
+            block += 1
+            player = actual_player
+            pos += 'third col '
+
+        return block, player, pos
+
+    def block_for_diags(self):
+        block = 0
+        player = 0
+        pos = ''
+        actual_player = self.actual_player
+        if self.state[0] == actual_player and self.state[4] == actual_player and self.state[8] != actual_player and self.state[8] != 0\
+                or self.state[0] == actual_player and self.state[4] != actual_player and self.state[4] != 0 and self.state[8] == actual_player\
+                or self.state[0] != actual_player and self.state[0] != 0 and self.state[4] == actual_player and self.state[8] == actual_player:
+            block += 1
+            player = actual_player
+            pos += 'l to r diag '
+        if self.state[2] == actual_player and self.state[4] == actual_player and self.state[6] != actual_player and self.state[6] != 0\
+                or self.state[2] == actual_player and self.state[4] != actual_player and self.state[4] != 0 and self.state[6] == actual_player\
+                or self.state[2] != actual_player and self.state[2] != 0 and self.state[4] == actual_player and self.state[6] == actual_player:
+            block += 1
+            player = actual_player
+            pos += 'r to l diag '
+
+        return block, player, pos
 
     def render(self, mode='human', close=False):
         pass
