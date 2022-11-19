@@ -27,8 +27,9 @@ def main():
     weights_path = "tictactoe_dqn2.h5"
     ENV_NAME = 'tictactoe-v0'
     env = gym.make(ENV_NAME)
-    model = create_model(env.get_obs_space().shape, env.get_action_space().n)
-    model.load_weights(weights_path)
+    #model = create_model(env.get_obs_space().shape, env.get_action_space().n)
+    #model.load_weights(weights_path)
+    model=load_model(weights_path+'_model.h5')
     memory = SequentialMemory(limit=5000000, window_length=1)
     policy = BoltzmannQPolicy()
 
