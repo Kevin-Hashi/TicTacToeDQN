@@ -1,0 +1,9 @@
+{
+  "ENV_NAME": "tictactoe-v0",
+  "last_weights_name": "",
+  "loop_max": 10,
+  "model_postfix_number": 1,
+  "new_weights_name": "tictactoe_dqn5",
+  "save_option_json_path": "tictactoe_dqn5_option.json",
+  "step_amount": 20000
+}
