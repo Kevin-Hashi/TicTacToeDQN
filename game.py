@@ -1,6 +1,9 @@
+import argparse
 import glob
+import json
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+import sys
 import timeit
 import warnings
 
@@ -17,6 +20,12 @@ from rl.memory import SequentialMemory
 from rl.policy import BoltzmannQPolicy
 
 from tictactoe_env.envs import tictactoe_enviroment
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--jsonpath', type=str, default='')
+args = parser.parse_args()
 
 
 class Logger(TrainEpisodeLogger):
@@ -108,11 +117,43 @@ def get_weights_path(weights_name):
     return path
 
 
+def make_json(path, **kargs):
+    with open(path, 'w') as f:
+        json.dump(kargs, f, indent=2, sort_keys=True, ensure_ascii=False)
+
+
+def load_json(path, key_list):
+    raw_dict = {}
+    with open(path, 'r') as f:
+        raw_dict = json.load(f)
+    select_dict = {}
+    for key in key_list:
+        try:
+            select_dict[key] = raw_dict[key]
+        except KeyError as e:
+            print(e, file=sys.stderr)
+    return select_dict
+
+
 def main():
     last_weights_name=""
     #last_weights_name = "tictactoe_dqn"
     new_weights_name = "tictactoe_dqn2"
     ENV_NAME = 'tictactoe-v0'
+    loop_max = 10
+    step_amount = 20000
+    save_option_json_path = new_weights_name+'_option.json'
+    if args.jsonpath != '':
+        keylist = ['last_weights_name', 'new_weights_name',
+                   'ENV_NAME', 'loop_max', 'step_amount', 'save_json_path']
+        json_dict = load_json(args.jsonpath, keylist)
+        last_weights_name = json_dict['last_weights_name']
+        new_weights_name = json_dict['new_weights_name']
+        ENV_NAME = json_dict['ENV_NAME']
+        loop_max = json_dict['loop_max']
+        step_amount = json_dict['step_amount']
+        save_option_json_path = json_dict['save_option_json_path']
+
     env = gym.make(ENV_NAME)
     model = create_model(env.get_obs_space().shape, env.get_action_space().n)
     memory = SequentialMemory(limit=5000000, window_length=1)
@@ -120,12 +161,11 @@ def main():
 
     dqn_1 = DQNAgent(model=model, memory=memory, policy=policy,
                      nb_actions=env.get_action_space().n, nb_steps_warmup=32, gamma=0.3)
-    dqn_1.compile(Adam(lr=1e-3), metrics=['accuracy', 'mae'])
+    dqn_1.compile(Adam(learning_rate=1e-3), metrics=['accuracy', 'mae'])
 
     os.makedirs(os.path.join('log', new_weights_name), exist_ok=True)
     model_postfix_number = int(sorted([f for f in os.listdir(os.path.join('log', new_weights_name)) if os.path.isdir(os.path.join(
         'log', new_weights_name, f))], key=lambda x: int(x))[-1])+1 if os.listdir(os.path.join('log', new_weights_name)) else 0
-    loop_max = 10
     for i in range(1, loop_max+1):
         tensorborad = TensorBoard(log_dir=os.path.join(
             'log', new_weights_name, str(model_postfix_number), str(i)))
@@ -136,9 +176,12 @@ def main():
         w_path = get_weights_path(last_weights_name+'.h5')
         if w_path != None:
             dqn_1.load_weights(w_path)
-        dqn_1.fit(env, nb_steps=20000, visualize=True,
+        dqn_1.fit(env, nb_steps=step_amount, visualize=True,
                   verbose=0, callbacks=[tensorborad, logger])
         dqn_1.save_weights(new_weights_name+'.h5', overwrite=True)
+        dqn_1.model.save(new_weights_name+'_model.h5', overwrite=True)
+    make_json(save_option_json_path, last_weights_name=last_weights_name, new_weights_name=new_weights_name, ENV_NAME=ENV_NAME, loop_max=loop_max,
+              step_amount=step_amount, save_option_json_path=save_option_json_path, model_postfix_number=model_postfix_number)
 
 
 if __name__ == '__main__':
